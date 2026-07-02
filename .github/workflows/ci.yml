@@ -41,7 +41,7 @@ jobs:
         run: terraform -chdir=terraform validate
 
   deploy:
-    name: Deploy (Terraform apply + Databricks bundle)
+    name: Deploy (Databricks bundle)
     needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -51,16 +51,6 @@ jobs:
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.15.7"
-
-      - name: Terraform apply
-        working-directory: terraform
-        run: |
-          terraform init
-          terraform apply -auto-approve
 
       - uses: databricks/setup-cli@main
 

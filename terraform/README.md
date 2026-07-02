@@ -17,10 +17,17 @@ Fora do escopo do Terraform, por decisao de arquitetura:
 
 ## Autenticacao
 
-O provider nao fixa metodo de autenticacao, por isso funciona tanto local
-quanto no CI:
+O provider nao fixa metodo de autenticacao. Local:
+`export DATABRICKS_CONFIG_PROFILE=DEFAULT` (usa o `~/.databrickscfg` ja
+configurado pelo Databricks CLI).
 
-- Local: `export DATABRICKS_CONFIG_PROFILE=DEFAULT` (usa o `~/.databrickscfg`
-  ja configurado pelo Databricks CLI).
-- CI: variaveis `DATABRICKS_HOST` e `DATABRICKS_TOKEN` (secrets do GitHub
-  Actions).
+## Estado e por que `apply` nao roda no CI
+
+O `terraform.tfstate` e local (backend padrao) e esta no `.gitignore` — nao e
+versionado. O job de CI faz `terraform init -backend=false` e `terraform
+validate` (checagem de sintaxe, sem credenciais, sem tocar na infraestrutura
+real), mas nao roda `apply`: sem o state persistido, cada execucao do CI
+partiria do zero e tentaria recriar os 9 recursos que ja existem, o que falha
+(e, em outro provider, poderia tentar duplicar recursos). Ate ter um backend
+remoto configurado, `apply` e sempre manual, local, com o state que ja existe
+na maquina de quem esta rodando.
