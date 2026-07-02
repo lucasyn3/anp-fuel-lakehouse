@@ -2,8 +2,9 @@
 
 Infraestrutura como codigo para o workspace Databricks (provider `databricks`)
 
-Recursos previstos: catalog, schemas (bronze/silver/gold), volume, Lakeflow
-Declarative Pipeline, job e SQL warehouse.
+Recursos previstos: catalog, schemas (bronze/silver/gold), volume, grupos e
+grants, Lakeflow Declarative Pipeline, job e SQL warehouse.
 
-Se nao houver PAT disponivel, esses recursos sao criados manualmente pela UI do
-workspace e essa pasta documenta a definicao pretendida sem aplicar.
+Catalog, schemas, volume, grupos e grants ja existem, criados manualmente via
+CLI/UI (ver README raiz, secao Governanca). Ao escrever esses recursos aqui,
+usar `terraform import` em vez de recriar.

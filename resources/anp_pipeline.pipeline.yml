@@ -1,0 +1,11 @@
+resources:
+  pipelines:
+    anp_pipeline:
+      name: anp_pipeline
+      catalog: ${var.catalog}
+      schema: bronze
+      serverless: true
+      root_path: "../src"
+      libraries:
+        - glob:
+            include: ../src/**
