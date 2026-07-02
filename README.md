@@ -34,8 +34,12 @@ dentro dele:
 
 ## Estrutura do repositorio
 
-- `terraform/` - IaC do workspace Databricks (condicional a PAT).
-- `src/` - codigo das camadas Bronze/Silver/Gold e do Lakeflow Pipeline.
+- `terraform/` - IaC do catalog, schemas, volume e grants no Unity Catalog.
+- `src/` - codigo das camadas Bronze/Silver/Gold do Lakeflow Pipeline.
+- `resources/` + `databricks.yml` - Databricks Asset Bundle: deploy do codigo
+  do pipeline e do job de agendamento.
 - `download/` - script de download dos CSVs da ANP.
-- `tests/` - testes unitarios das transformacoes.
-- `.github/workflows/` - CI (validacao sempre; deploy condicional a PAT).
+- `tests/` - testes unitarios do script de download.
+- `.github/workflows/` - CI (lint + testes + `terraform validate` sempre;
+  deploy no push pra `main`, condicional aos secrets `DATABRICKS_HOST` e
+  `DATABRICKS_TOKEN` no repositorio).
