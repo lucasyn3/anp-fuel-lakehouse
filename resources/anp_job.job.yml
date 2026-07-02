@@ -1,0 +1,14 @@
+resources:
+  jobs:
+    anp_job:
+      name: anp_job
+
+      trigger:
+        periodic:
+          interval: 1
+          unit: WEEKS
+
+      tasks:
+        - task_key: refresh_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.anp_pipeline.id}
