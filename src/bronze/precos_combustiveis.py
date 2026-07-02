@@ -25,7 +25,7 @@ RAW_TO_CLEAN_COLUMNS = {
 
 
 @dp.table(
-    name="precos_combustiveis",
+    name="anp_lakehouse.bronze.precos_combustiveis",
     comment="Ingestao incremental via Auto Loader dos CSVs de precos da ANP.",
 )
 @dp.expect("produto_presente", "produto IS NOT NULL")
