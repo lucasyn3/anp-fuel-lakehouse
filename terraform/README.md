@@ -1,10 +1,26 @@
 # terraform/
 
-Infraestrutura como codigo para o workspace Databricks (provider `databricks`)
+Infraestrutura como codigo para o workspace Databricks (provider `databricks`).
 
-Recursos previstos: catalog, schemas (bronze/silver/gold), volume, grupos e
-grants, Lakeflow Declarative Pipeline, job e SQL warehouse.
+Gerencia: catalog `anp_lakehouse`, schemas (bronze/silver/gold), volume de
+landing e os grants por schema (ver README raiz, secao Governanca). Todos
+adotados via `terraform import` a partir de recursos que ja existiam, criados
+manualmente durante o desenvolvimento inicial do projeto.
 
-Catalog, schemas, volume, grupos e grants ja existem, criados manualmente via
-CLI/UI (ver README raiz, secao Governanca). Ao escrever esses recursos aqui,
-usar `terraform import` em vez de recriar.
+Fora do escopo do Terraform, por decisao de arquitetura:
+- **Grupos de conta** (`anp_engineerss`, `anp_analystss`, `anp_adminss`):
+  provisionados via Identity and access. Ver comentario em `grants.tf`.
+- **Pipeline, job e codigo de transformacao**: gerenciados via Databricks
+  Asset Bundle (`databricks.yml` + `resources/*.yml` na raiz do repo), nao
+  pelo Terraform.
+- **SQL warehouse**: ainda nao criado (Fase 7 do plano).
+
+## Autenticacao
+
+O provider nao fixa metodo de autenticacao, por isso funciona tanto local
+quanto no CI:
+
+- Local: `export DATABRICKS_CONFIG_PROFILE=DEFAULT` (usa o `~/.databrickscfg`
+  ja configurado pelo Databricks CLI).
+- CI: variaveis `DATABRICKS_HOST` e `DATABRICKS_TOKEN` (secrets do GitHub
+  Actions).
