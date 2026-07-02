@@ -17,6 +17,21 @@ Lakeflow Declarative Pipelines).
 Reprocessamento auditavel (o dado bruto na Bronze nunca e sobrescrito) e
 linhagem ponta a ponta no Unity Catalog, do CSV bruto ate a metrica agregada.
 
+## Governanca (Unity Catalog)
+
+Catalog `anp_lakehouse`, schemas `bronze`/`silver`/`gold`, volume de landing
+`anp_lakehouse.bronze.landing` (destino dos CSVs crus da ANP).
+
+Acesso concedido por grupo a nivel de schema, herdado por toda tabela criada
+dentro dele:
+
+| Grupo | Escopo | Privilegios |
+|---|---|---|
+| `anp_adminss` | catalog `anp_lakehouse` | owner |
+| `anp_engineerss` | schema `bronze` (+ volume `landing`) | USE_SCHEMA, CREATE_TABLE, CREATE_VOLUME, MODIFY, SELECT, READ_VOLUME, WRITE_VOLUME |
+| `anp_engineerss` | schemas `silver`, `gold` | USE_SCHEMA, CREATE_TABLE, MODIFY, SELECT |
+| `anp_analystss` | schema `gold` | USE_SCHEMA, SELECT (somente leitura, perfil dashboard) |
+
 ## Estrutura do repositorio
 
 - `terraform/` - IaC do workspace Databricks (condicional a PAT).

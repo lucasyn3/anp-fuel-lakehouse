@@ -1,0 +1,17 @@
+bundle:
+  name: anp-fuel-lakehouse
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Catalog Unity Catalog do projeto
+    default: anp_lakehouse
+
+targets:
+  default:
+    default: true
+    workspace:
+      host: https://dbc-d275545a-6ab2.cloud.databricks.com
+      root_path: /Workspace/anp-fuel-lakehouse
