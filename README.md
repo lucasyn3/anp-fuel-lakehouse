@@ -8,14 +8,88 @@ Lakeflow Declarative Pipelines).
 
 - Ingestao incremental dos CSVs da ANP a partir de um Volume do Unity Catalog.
 - Camadas Delta com Auto Loader, deduplicacao/MERGE e agregacoes de negocio.
-- Infraestrutura como codigo (Terraform) e CI (GitHub Actions), quando um
-  Personal Access Token do workspace estiver disponivel.
-- Dashboard AI/BI sobre a camada Gold.
+- Infraestrutura como codigo (Terraform) e CI (GitHub Actions).
 
 ## Por que medallion
 
 Reprocessamento auditavel (o dado bruto na Bronze nunca e sobrescrito) e
 linhagem ponta a ponta no Unity Catalog, do CSV bruto ate a metrica agregada.
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+    subgraph ext["Fora do Databricks"]
+        anp["ANP<br/>CSVs de precos"]
+        ci["GitHub Actions<br/>CI/CD"]
+    end
+
+    subgraph uc["Unity Catalog - anp_lakehouse"]
+        vol[("Volume<br/>bronze.landing")]
+        bronze[["Bronze<br/>precos_combustiveis<br/>(streaming table)"]]
+        silver_fact[["Silver<br/>precos_combustiveis<br/>(materialized view)"]]
+        silver_dim[["Silver<br/>revendas<br/>(streaming table, SCD2)"]]
+        gold[["Gold<br/>precos_medios<br/>(materialized view)"]]
+    end
+
+    job["Job anp_pipeline<br/>agendamento semanal"]
+
+    anp -->|"download_anp.py"| vol
+    vol -->|"Auto Loader"| bronze
+    bronze --> silver_fact
+    bronze --> silver_dim
+    silver_fact --> gold
+    job -.dispara.-> bronze
+    ci -.-> |"databricks bundle deploy<br/>(codigo do pipeline)"| bronze
+    ci -.-> |"terraform apply<br/>(catalog/schema/volume/grants)"| uc
+```
+
+Terraform provisiona a infraestrutura (catalog, schemas, volume, grants);
+Databricks Asset Bundle publica o codigo do pipeline; o Job dispara a
+execucao semanal. Ver secao Governanca abaixo pra quem tem acesso a cada
+schema.
+
+## Modelo de dados (Star Schema)
+
+A camada Silver segue um desenho clássico de fato + dimensao:
+
+```mermaid
+erDiagram
+    precos_combustiveis }o--|| revendas : "cnpj_revenda"
+
+    precos_combustiveis {
+        string cnpj_revenda FK
+        string produto
+        date data_coleta
+        decimal valor_venda
+        decimal valor_compra
+        string unidade_medida
+        string regiao_sigla
+        string estado_sigla
+        string municipio
+    }
+
+    revendas {
+        string cnpj_revenda PK
+        string revenda
+        string bandeira
+        string nome_rua
+        string numero_rua
+        string bairro
+        string cep
+        string municipio
+        string estado_sigla
+        date data_coleta
+        boolean __START_AT
+        boolean __END_AT
+    }
+```
+
+`precos_combustiveis` (fato) tem uma linha por observacao de preco;
+`revendas` (dimensao) tem uma linha por posto, mas com **historico**: como e
+mantida via `AUTO CDC` com `stored_as_scd_type=2`, uma troca de bandeira ou
+endereco gera uma nova versao da linha em vez de sobrescrever a antiga
+(colunas `__START_AT`/`__END_AT` controlam a validade de cada versao).
 
 ## Governanca (Unity Catalog)
 
