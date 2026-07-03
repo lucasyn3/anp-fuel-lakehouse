@@ -10,8 +10,11 @@ inclui so `resources/*.yml`, essa pasta nao entra no glob).
 
   O bloqueio e especifico da API `POST /api/2.2/jobs/create` usada pelo
   bundle/CLI: criar o mesmo job pela UI (Jobs & Pipelines -> abre o
-  `anp_pipeline` -> botao **Schedule** -> Weekly) funcionou sem erro. O job
-  `anp_job` existe hoje gerenciado manualmente pela UI, com agendamento
-  semanal (segunda-feira, meia-noite America/Sao_Paulo) - nao pelo bundle.
-  Mover esse yml de volta pra `resources/` (e apagar o job criado pela UI
-  pra evitar duplicata) quando a criacao via API voltar a funcionar.
+  `anp_pipeline` -> botao **Schedule** -> Weekly) funcionou sem erro em
+  ambas as contas. O job existe hoje gerenciado manualmente pela UI, com
+  agendamento semanal - nao pelo bundle. Na conta definitiva (`free2`), o
+  job se chama **`anp_pipeline`** (nome que a UI preencheu por padrao, nao
+  `anp_job`), roda toda sexta-feira 00:53 America/Sao_Paulo, job_id
+  `902849683188471`. Mover esse yml de volta pra `resources/` (e apagar o
+  job criado pela UI pra evitar duplicata) quando a criacao via API voltar
+  a funcionar.
