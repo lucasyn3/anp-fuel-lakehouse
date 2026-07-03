@@ -37,7 +37,8 @@ dentro dele:
 - `terraform/` - IaC do catalog, schemas, volume e grants no Unity Catalog.
 - `src/` - codigo das camadas Bronze/Silver/Gold do Lakeflow Pipeline.
 - `resources/` + `databricks.yml` - Databricks Asset Bundle: deploy do codigo
-  do pipeline e do job de agendamento.
+  do pipeline. O job de agendamento (`anp_job`) e gerenciado manualmente pela
+  UI (`resources/disabled/anp_job.job.yml` documenta o motivo).
 - `download/` - script de download dos CSVs da ANP.
 - `tests/` - testes unitarios do script de download.
 - `.github/workflows/` - CI (lint + testes + `terraform validate` sempre;
