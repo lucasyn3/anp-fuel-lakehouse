@@ -123,6 +123,27 @@ dentro dele:
 | `anp_engineers` | schemas `silver`, `gold` | USE_SCHEMA, CREATE_TABLE, MODIFY, SELECT |
 | `anp_analysts` | schema `gold` | USE_SCHEMA, SELECT (somente leitura, perfil dashboard) |
 
+### Column mask (PII)
+
+`cnpj_revenda` em `silver.revendas` tem uma mascara de coluna nativa do
+Unity Catalog: quem nao e `anp_engineers`/`anp_admins` ve so os 4 ultimos
+digitos, nao o CNPJ completo.
+
+```sql
+CREATE OR REPLACE FUNCTION anp_lakehouse.silver.mask_cnpj(cnpj STRING)
+RETURN CASE
+    WHEN is_account_group_member('anp_engineers') OR is_account_group_member('anp_admins') THEN cnpj
+    ELSE CONCAT('**.***.***/****-', right(cnpj, 4))
+END;
+
+ALTER TABLE anp_lakehouse.silver.revendas ALTER COLUMN cnpj_revenda SET MASK anp_lakehouse.silver.mask_cnpj;
+```
+
+Diferente de uma view que so omite coluna, a mascara fica **na tabela
+original**: a coluna continua existindo pra todo mundo, mas o **valor**
+retornado muda dependendo de quem consulta — `is_account_group_member()` e
+avaliado a cada query. Aplicado direto via SQL (nao esta no Terraform ainda).
+
 ## Estrutura do repositorio
 
 - `terraform/` - IaC do catalog, schemas, volume e grants no Unity Catalog.
