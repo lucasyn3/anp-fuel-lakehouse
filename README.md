@@ -27,10 +27,10 @@ dentro dele:
 
 | Grupo | Escopo | Privilegios |
 |---|---|---|
-| `anp_adminss` | catalog `anp_lakehouse` | owner |
-| `anp_engineerss` | schema `bronze` (+ volume `landing`) | USE_SCHEMA, CREATE_TABLE, CREATE_VOLUME, MODIFY, SELECT, READ_VOLUME, WRITE_VOLUME |
-| `anp_engineerss` | schemas `silver`, `gold` | USE_SCHEMA, CREATE_TABLE, MODIFY, SELECT |
-| `anp_analystss` | schema `gold` | USE_SCHEMA, SELECT (somente leitura, perfil dashboard) |
+| `anp_admins` | catalog `anp_lakehouse` | owner |
+| `anp_engineers` | schema `bronze` (+ volume `landing`) | USE_SCHEMA, CREATE_TABLE, CREATE_VOLUME, MODIFY, SELECT, READ_VOLUME, WRITE_VOLUME |
+| `anp_engineers` | schemas `silver`, `gold` | USE_SCHEMA, CREATE_TABLE, MODIFY, SELECT |
+| `anp_analysts` | schema `gold` | USE_SCHEMA, SELECT (somente leitura, perfil dashboard) |
 
 ## Estrutura do repositorio
 

@@ -13,5 +13,12 @@ targets:
   default:
     default: true
     workspace:
+      host: https://dbc-ccd159dc-b925.cloud.databricks.com
+      root_path: /Workspace/anp-fuel-lakehouse
+  legacy:
+    # Conta original, ficou sem credito de compute e bloqueada pra criar Job
+    # via API (ver docs/PLANEJAMENTO.md secao 8). Mantido caso o bloqueio
+    # seja resolvido no futuro.
+    workspace:
       host: https://dbc-d275545a-6ab2.cloud.databricks.com
       root_path: /Workspace/anp-fuel-lakehouse

@@ -5,8 +5,8 @@
 resource "databricks_catalog" "anp_lakehouse" {
   name         = "anp_lakehouse"
   comment      = "Lakehouse de precos de combustiveis ANP"
-  owner        = "anp_adminss"
-  storage_root = "s3://dbstorage-prod-224hl/uc/e5ad2c55-3369-4c72-aa49-10b4517fea18/bf7e1747-1f69-4d2a-8c45-3943bc691ab9"
+  owner        = "anp_admins"
+  storage_root = "s3://dbstorage-prod-3emgr/uc/bfea514e-3191-49eb-9346-c778926d7f58/ef070447-27be-40d2-992c-eaa530fa1773"
 }
 
 resource "databricks_schema" "bronze" {
