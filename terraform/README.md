@@ -8,18 +8,21 @@ adotados via `terraform import` a partir de recursos que ja existiam, criados
 manualmente durante o desenvolvimento inicial do projeto.
 
 Fora do escopo do Terraform, por decisao de arquitetura:
-- **Grupos de conta** (`anp_engineerss`, `anp_analystss`, `anp_adminss`):
+- **Grupos de conta** (`anp_engineers`, `anp_analysts`, `anp_admins`):
   provisionados via Identity and access. Ver comentario em `grants.tf`.
 - **Pipeline, job e codigo de transformacao**: gerenciados via Databricks
   Asset Bundle (`databricks.yml` + `resources/*.yml` na raiz do repo), nao
   pelo Terraform.
-- **SQL warehouse**: ainda nao criado (Fase 7 do plano).
+- **SQL warehouse**: veio pre-provisionado pela Databricks nessa conta
+  ("Serverless Starter Warehouse"), nao criado por nos.
 
 ## Autenticacao
 
 O provider nao fixa metodo de autenticacao. Local:
-`export DATABRICKS_CONFIG_PROFILE=DEFAULT` (usa o `~/.databrickscfg` ja
-configurado pelo Databricks CLI).
+`export DATABRICKS_CONFIG_PROFILE=free2` (usa o perfil `free2` do
+`~/.databrickscfg`, que aponta pra conta definitiva do projeto — ver
+docs/PLANEJAMENTO.md secao 8 sobre a conta anterior, mantida como perfil
+`DEFAULT`/target `legacy` caso volte a funcionar).
 
 ## Estado e por que `apply` nao roda no CI
 
