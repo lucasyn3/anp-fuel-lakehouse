@@ -29,7 +29,7 @@ flowchart LR
         bronze[["Bronze<br/>precos_combustiveis<br/>(streaming table)"]]
         silver_fact[["Silver<br/>precos_combustiveis<br/>(materialized view, fato)"]]
         silver_dim[["Silver<br/>revendas<br/>(streaming table, SCD2, dimensao)"]]
-        silver_dim_produto[["Silver<br/>dim_produto<br/>(materialized view, dimensao)"]]
+        silver_produtos[["Silver<br/>produtos<br/>(materialized view, dimensao)"]]
         gold[["Gold<br/>precos_medios<br/>(materialized view)"]]
     end
 
@@ -39,9 +39,9 @@ flowchart LR
     vol -->|"Auto Loader"| bronze
     bronze --> silver_fact
     bronze --> silver_dim
-    silver_dim_produto --> silver_fact
+    silver_produtos --> silver_fact
     silver_fact --> gold
-    silver_dim_produto --> gold
+    silver_produtos --> gold
     job -.dispara.-> bronze
     ci -.-> |"databricks bundle deploy<br/>(codigo do pipeline)"| bronze
     ci -.-> |"terraform apply<br/>(catalog/schema/volume/grants)"| uc
@@ -61,7 +61,7 @@ erDiagram
     direction LR
 
     revendas ||--o{ precos_combustiveis : "cnpj_revenda"
-    dim_produto ||--o{ precos_combustiveis : "produto_id"
+    produtos ||--o{ precos_combustiveis : "produto_id"
 
     revendas {
         string cnpj_revenda PK
@@ -90,7 +90,7 @@ erDiagram
         string municipio
     }
 
-    dim_produto {
+    produtos {
         int produto_id PK
         string produto_nome
         string categoria
@@ -104,18 +104,9 @@ erDiagram
   com **historico** — troca de bandeira ou endereco gera uma versao nova em
   vez de sobrescrever (`__START_AT`/`__END_AT` controlam a validade de cada
   versao, geradas automaticamente pelo AUTO CDC).
-- **Dimensao `dim_produto`**: dominio pequeno e fixo (os produtos de
+- **Dimensao `produtos`**: dominio pequeno e fixo (os produtos de
   combustivel da ANP), por isso e uma tabela estatica em vez de derivada dos
   dados — padrao comum pra dimensoes de baixa cardinalidade.
-
-`precos_combustiveis` (fato) tem uma linha por observacao de preco;
-`revendas` (dimensao) tem uma linha por posto, mas com **historico**: como e
-mantida via `AUTO CDC` com `stored_as_scd_type=2`, uma troca de bandeira ou
-endereco gera uma nova versao da linha em vez de sobrescrever a antiga
-(colunas `__START_AT`/`__END_AT` controlam a validade de cada versao).
-`dim_produto` e um dominio pequeno e conhecido (os produtos de combustivel
-da ANP), por isso e uma tabela estatica em vez de derivada dos dados —
-padrao comum pra dimensoes de baixa cardinalidade.
 
 ## Governanca (Unity Catalog)
 

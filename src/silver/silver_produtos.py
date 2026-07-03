@@ -14,8 +14,8 @@ SCHEMA = "produto_id INT, produto_nome STRING, categoria STRING"
 
 
 @dp.materialized_view(
-    name="anp_lakehouse.silver.dim_produto",
+    name="anp_lakehouse.silver.produtos",
     comment="Dimensao de produtos de combustivel. Dominio fixo e conhecido (ver README).",
 )
-def dim_produto():
+def produtos():
     return spark.createDataFrame(PRODUTOS, schema=SCHEMA)

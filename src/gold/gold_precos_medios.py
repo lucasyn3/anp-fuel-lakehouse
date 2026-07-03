@@ -10,10 +10,10 @@ from pyspark.sql.functions import min as spark_min
 )
 def precos_medios():
     fato = spark.read.table("anp_lakehouse.silver.precos_combustiveis")
-    dim_produto = spark.read.table("anp_lakehouse.silver.dim_produto")
+    produtos = spark.read.table("anp_lakehouse.silver.produtos")
 
     return (
-        fato.join(broadcast(dim_produto), "produto_id")
+        fato.join(broadcast(produtos), "produto_id")
         .withColumn("mes_referencia", date_trunc("month", col("data_coleta")).cast("date"))
         .groupBy("estado_sigla", "produto_nome", "categoria", "mes_referencia")
         .agg(
