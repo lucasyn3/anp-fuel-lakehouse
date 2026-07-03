@@ -51,39 +51,38 @@ schema.
 
 ## Modelo de dados (Star Schema)
 
-A camada Silver segue um desenho clássico de fato + dimensao:
+> Star schema minimo: 1 fato + 1 dimensao. Um star schema completo tem
+> varias dimensoes ao redor do fato (produto, tempo, etc.) — candidato
+> natural a evoluir aqui e extrair `produto` do fato pra uma `dim_produto`
+> propria.
 
 ```mermaid
-erDiagram
-    precos_combustiveis }o--|| revendas : "cnpj_revenda"
+flowchart TD
+    dim["DIMENSAO<br/>revendas<br/>1 linha por posto, com historico SCD2"]
+    fato(("FATO<br/>precos_combustiveis<br/>1 linha por observacao de preco"))
 
-    precos_combustiveis {
-        string cnpj_revenda FK
-        string produto
-        date data_coleta
-        decimal valor_venda
-        decimal valor_compra
-        string unidade_medida
-        string regiao_sigla
-        string estado_sigla
-        string municipio
-    }
-
-    revendas {
-        string cnpj_revenda PK
-        string revenda
-        string bandeira
-        string nome_rua
-        string numero_rua
-        string bairro
-        string cep
-        string municipio
-        string estado_sigla
-        date data_coleta
-        boolean __START_AT
-        boolean __END_AT
-    }
+    dim ---|"cnpj_revenda"| fato
 ```
+
+**Fato `precos_combustiveis`**
+
+| Coluna | Tipo | Papel |
+|---|---|---|
+| `cnpj_revenda` | string | FK -> `revendas` |
+| `produto` | string | medida qualitativa |
+| `data_coleta` | date | quando a observacao foi feita |
+| `valor_venda`, `valor_compra` | decimal | medidas numericas |
+| `unidade_medida` | string | contexto da medida |
+| `regiao_sigla`, `estado_sigla`, `municipio` | string | localizacao |
+
+**Dimensao `revendas`** (SCD Type 2 via AUTO CDC)
+
+| Coluna | Tipo | Papel |
+|---|---|---|
+| `cnpj_revenda` | string | PK |
+| `revenda`, `bandeira` | string | atributos que geram nova versao se mudarem |
+| `nome_rua`, `numero_rua`, `bairro`, `cep`, `municipio`, `estado_sigla` | string | endereco |
+| `__START_AT`, `__END_AT` | timestamp | validade de cada versao (geradas pelo AUTO CDC) |
 
 `precos_combustiveis` (fato) tem uma linha por observacao de preco;
 `revendas` (dimensao) tem uma linha por posto, mas com **historico**: como e
