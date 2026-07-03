@@ -54,5 +54,12 @@ jobs:
 
       - uses: databricks/setup-cli@main
 
+      - name: Debug secrets (temporario, nao expoe valor)
+        run: |
+          echo "HOST length: ${#DATABRICKS_HOST}"
+          echo "HOST prefix ok: $(echo "$DATABRICKS_HOST" | grep -c '^https://dbc-')"
+          echo "TOKEN length: ${#DATABRICKS_TOKEN}"
+          echo "TOKEN prefix ok: $(echo "$DATABRICKS_TOKEN" | grep -c '^dapi')"
+
       - name: Deploy do bundle (pipeline)
         run: databricks bundle deploy
