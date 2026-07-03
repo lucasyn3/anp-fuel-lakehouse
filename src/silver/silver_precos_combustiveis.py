@@ -5,23 +5,23 @@ from pyspark.sql.functions import broadcast, col, regexp_replace, row_number, to
 
 @dp.materialized_view(
     name="anp_lakehouse.silver.precos_combustiveis",
-    comment="Precos de combustiveis limpos, deduplicados e com tipos corretos. produto_id referencia silver.dim_produto.",
+    comment="Precos de combustiveis limpos, deduplicados e com tipos corretos. produto_id referencia silver.produtos.",
 )
 @dp.expect_or_drop("valor_venda_valido", "valor_venda IS NOT NULL AND valor_venda > 0")
 @dp.expect_or_drop("data_coleta_valida", "data_coleta IS NOT NULL AND data_coleta <= current_date()")
 @dp.expect_or_drop("produto_conhecido", "produto_id IS NOT NULL")
 def precos_combustiveis():
     bronze = spark.read.table("anp_lakehouse.bronze.precos_combustiveis")
-    dim_produto = spark.read.table("anp_lakehouse.silver.dim_produto")
+    produtos = spark.read.table("anp_lakehouse.silver.produtos")
 
     df = (
         bronze.join(
-            broadcast(dim_produto),
-            trim(bronze["produto"]) == dim_produto["produto_nome"],
+            broadcast(produtos),
+            trim(bronze["produto"]) == produtos["produto_nome"],
             "left",
         ).select(
             trim(bronze["cnpj_revenda"]).alias("cnpj_revenda"),
-            dim_produto["produto_id"],
+            produtos["produto_id"],
             to_date(bronze["data_coleta"], "dd/MM/yyyy").alias("data_coleta"),
             regexp_replace(bronze["valor_venda"], ",", ".").cast("decimal(10,3)").alias("valor_venda"),
             regexp_replace(bronze["valor_compra"], ",", ".").cast("decimal(10,3)").alias("valor_compra"),

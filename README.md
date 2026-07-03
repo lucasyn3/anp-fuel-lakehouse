@@ -29,7 +29,7 @@ flowchart LR
         bronze[["Bronze<br/>precos_combustiveis<br/>(streaming table)"]]
         silver_fact[["Silver<br/>precos_combustiveis<br/>(materialized view, fato)"]]
         silver_dim[["Silver<br/>revendas<br/>(streaming table, SCD2, dimensao)"]]
-        silver_dim_produto[["Silver<br/>dim_produto<br/>(materialized view, dimensao)"]]
+        silver_produtos[["Silver<br/>produtos<br/>(materialized view, dimensao)"]]
         gold[["Gold<br/>precos_medios<br/>(materialized view)"]]
     end
 
@@ -39,9 +39,9 @@ flowchart LR
     vol -->|"Auto Loader"| bronze
     bronze --> silver_fact
     bronze --> silver_dim
-    silver_dim_produto --> silver_fact
+    silver_produtos --> silver_fact
     silver_fact --> gold
-    silver_dim_produto --> gold
+    silver_produtos --> gold
     job -.dispara.-> bronze
     ci -.-> |"databricks bundle deploy<br/>(codigo do pipeline)"| bronze
     ci -.-> |"terraform apply<br/>(catalog/schema/volume/grants)"| uc
@@ -54,54 +54,59 @@ schema.
 
 ## Modelo de dados (Star Schema)
 
-Fato no centro, duas dimensoes ao redor:
+Fato no centro, duas dimensoes ao redor, cada uma com sua chave:
 
 ```mermaid
-flowchart TD
-    dim_revenda["DIMENSAO<br/>revendas<br/>1 linha por posto, com historico SCD2"]
-    dim_produto["DIMENSAO<br/>dim_produto<br/>dominio fixo: DIESEL, GASOLINA, ETANOL, GLP, GNV..."]
-    fato(("FATO<br/>precos_combustiveis<br/>1 linha por observacao de preco"))
+erDiagram
+    direction LR
 
-    dim_revenda ---|"cnpj_revenda"| fato
-    dim_produto ---|"produto_id"| fato
+    revendas ||--o{ precos_combustiveis : "cnpj_revenda"
+    produtos ||--o{ precos_combustiveis : "produto_id"
+
+    revendas {
+        string cnpj_revenda PK
+        string revenda
+        string bandeira
+        string nome_rua
+        string numero_rua
+        string bairro
+        string cep
+        string municipio
+        string estado_sigla
+        date data_coleta
+        timestamp __START_AT
+        timestamp __END_AT
+    }
+
+    precos_combustiveis {
+        string cnpj_revenda FK
+        int produto_id FK
+        date data_coleta
+        decimal valor_venda
+        decimal valor_compra
+        string unidade_medida
+        string regiao_sigla
+        string estado_sigla
+        string municipio
+    }
+
+    produtos {
+        int produto_id PK
+        string produto_nome
+        string categoria
+    }
 ```
 
-**Fato `precos_combustiveis`**
-
-| Coluna | Tipo | Papel |
-|---|---|---|
-| `cnpj_revenda` | string | FK -> `revendas` |
-| `produto_id` | int | FK -> `dim_produto` |
-| `data_coleta` | date | quando a observacao foi feita |
-| `valor_venda`, `valor_compra` | decimal | medidas numericas |
-| `unidade_medida` | string | contexto da medida |
-| `regiao_sigla`, `estado_sigla`, `municipio` | string | localizacao |
-
-**Dimensao `revendas`** (SCD Type 2 via AUTO CDC)
-
-| Coluna | Tipo | Papel |
-|---|---|---|
-| `cnpj_revenda` | string | PK |
-| `revenda`, `bandeira` | string | atributos que geram nova versao se mudarem |
-| `nome_rua`, `numero_rua`, `bairro`, `cep`, `municipio`, `estado_sigla` | string | endereco |
-| `__START_AT`, `__END_AT` | timestamp | validade de cada versao (geradas pelo AUTO CDC) |
-
-**Dimensao `dim_produto`** (dominio fixo, tabela estatica)
-
-| Coluna | Tipo | Papel |
-|---|---|---|
-| `produto_id` | int | PK |
-| `produto_nome` | string | ex: `GASOLINA ADITIVADA` |
-| `categoria` | string | agrupamento (ex: `DIESEL`/`DIESEL S10` -> `Diesel`) |
-
-`precos_combustiveis` (fato) tem uma linha por observacao de preco;
-`revendas` (dimensao) tem uma linha por posto, mas com **historico**: como e
-mantida via `AUTO CDC` com `stored_as_scd_type=2`, uma troca de bandeira ou
-endereco gera uma nova versao da linha em vez de sobrescrever a antiga
-(colunas `__START_AT`/`__END_AT` controlam a validade de cada versao).
-`dim_produto` e um dominio pequeno e conhecido (os produtos de combustivel
-da ANP), por isso e uma tabela estatica em vez de derivada dos dados —
-padrao comum pra dimensoes de baixa cardinalidade.
+- **Fato `precos_combustiveis`**: 1 linha por observacao de preco. Carrega as
+  medidas numericas (`valor_venda`, `valor_compra`) e as chaves estrangeiras
+  pras duas dimensoes.
+- **Dimensao `revendas`** (SCD Type 2 via AUTO CDC): 1 linha por posto, mas
+  com **historico** — troca de bandeira ou endereco gera uma versao nova em
+  vez de sobrescrever (`__START_AT`/`__END_AT` controlam a validade de cada
+  versao, geradas automaticamente pelo AUTO CDC).
+- **Dimensao `produtos`**: dominio pequeno e fixo (os produtos de
+  combustivel da ANP), por isso e uma tabela estatica em vez de derivada dos
+  dados — padrao comum pra dimensoes de baixa cardinalidade.
 
 ## Governanca (Unity Catalog)
 
