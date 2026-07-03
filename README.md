@@ -27,8 +27,9 @@ flowchart LR
     subgraph uc["Unity Catalog - anp_lakehouse"]
         vol[("Volume<br/>bronze.landing")]
         bronze[["Bronze<br/>precos_combustiveis<br/>(streaming table)"]]
-        silver_fact[["Silver<br/>precos_combustiveis<br/>(materialized view)"]]
-        silver_dim[["Silver<br/>revendas<br/>(streaming table, SCD2)"]]
+        silver_fact[["Silver<br/>precos_combustiveis<br/>(materialized view, fato)"]]
+        silver_dim[["Silver<br/>revendas<br/>(streaming table, SCD2, dimensao)"]]
+        silver_dim_produto[["Silver<br/>dim_produto<br/>(materialized view, dimensao)"]]
         gold[["Gold<br/>precos_medios<br/>(materialized view)"]]
     end
 
@@ -38,7 +39,9 @@ flowchart LR
     vol -->|"Auto Loader"| bronze
     bronze --> silver_fact
     bronze --> silver_dim
+    silver_dim_produto --> silver_fact
     silver_fact --> gold
+    silver_dim_produto --> gold
     job -.dispara.-> bronze
     ci -.-> |"databricks bundle deploy<br/>(codigo do pipeline)"| bronze
     ci -.-> |"terraform apply<br/>(catalog/schema/volume/grants)"| uc
@@ -51,17 +54,16 @@ schema.
 
 ## Modelo de dados (Star Schema)
 
-> Star schema minimo: 1 fato + 1 dimensao. Um star schema completo tem
-> varias dimensoes ao redor do fato (produto, tempo, etc.) — candidato
-> natural a evoluir aqui e extrair `produto` do fato pra uma `dim_produto`
-> propria.
+Fato no centro, duas dimensoes ao redor:
 
 ```mermaid
 flowchart TD
-    dim["DIMENSAO<br/>revendas<br/>1 linha por posto, com historico SCD2"]
+    dim_revenda["DIMENSAO<br/>revendas<br/>1 linha por posto, com historico SCD2"]
+    dim_produto["DIMENSAO<br/>dim_produto<br/>dominio fixo: DIESEL, GASOLINA, ETANOL, GLP, GNV..."]
     fato(("FATO<br/>precos_combustiveis<br/>1 linha por observacao de preco"))
 
-    dim ---|"cnpj_revenda"| fato
+    dim_revenda ---|"cnpj_revenda"| fato
+    dim_produto ---|"produto_id"| fato
 ```
 
 **Fato `precos_combustiveis`**
@@ -69,7 +71,7 @@ flowchart TD
 | Coluna | Tipo | Papel |
 |---|---|---|
 | `cnpj_revenda` | string | FK -> `revendas` |
-| `produto` | string | medida qualitativa |
+| `produto_id` | int | FK -> `dim_produto` |
 | `data_coleta` | date | quando a observacao foi feita |
 | `valor_venda`, `valor_compra` | decimal | medidas numericas |
 | `unidade_medida` | string | contexto da medida |
@@ -84,11 +86,22 @@ flowchart TD
 | `nome_rua`, `numero_rua`, `bairro`, `cep`, `municipio`, `estado_sigla` | string | endereco |
 | `__START_AT`, `__END_AT` | timestamp | validade de cada versao (geradas pelo AUTO CDC) |
 
+**Dimensao `dim_produto`** (dominio fixo, tabela estatica)
+
+| Coluna | Tipo | Papel |
+|---|---|---|
+| `produto_id` | int | PK |
+| `produto_nome` | string | ex: `GASOLINA ADITIVADA` |
+| `categoria` | string | agrupamento (ex: `DIESEL`/`DIESEL S10` -> `Diesel`) |
+
 `precos_combustiveis` (fato) tem uma linha por observacao de preco;
 `revendas` (dimensao) tem uma linha por posto, mas com **historico**: como e
 mantida via `AUTO CDC` com `stored_as_scd_type=2`, uma troca de bandeira ou
 endereco gera uma nova versao da linha em vez de sobrescrever a antiga
 (colunas `__START_AT`/`__END_AT` controlam a validade de cada versao).
+`dim_produto` e um dominio pequeno e conhecido (os produtos de combustivel
+da ANP), por isso e uma tabela estatica em vez de derivada dos dados —
+padrao comum pra dimensoes de baixa cardinalidade.
 
 ## Governanca (Unity Catalog)
 

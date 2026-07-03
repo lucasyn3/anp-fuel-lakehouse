@@ -1,5 +1,5 @@
 from pyspark import pipelines as dp
-from pyspark.sql.functions import avg, col, count, date_trunc
+from pyspark.sql.functions import avg, broadcast, col, count, date_trunc
 from pyspark.sql.functions import max as spark_max
 from pyspark.sql.functions import min as spark_min
 
@@ -9,10 +9,13 @@ from pyspark.sql.functions import min as spark_min
     comment="Preco medio de combustiveis por estado, produto e mes.",
 )
 def precos_medios():
-    df = spark.read.table("anp_lakehouse.silver.precos_combustiveis")
+    fato = spark.read.table("anp_lakehouse.silver.precos_combustiveis")
+    dim_produto = spark.read.table("anp_lakehouse.silver.dim_produto")
+
     return (
-        df.withColumn("mes_referencia", date_trunc("month", col("data_coleta")).cast("date"))
-        .groupBy("estado_sigla", "produto", "mes_referencia")
+        fato.join(broadcast(dim_produto), "produto_id")
+        .withColumn("mes_referencia", date_trunc("month", col("data_coleta")).cast("date"))
+        .groupBy("estado_sigla", "produto_nome", "categoria", "mes_referencia")
         .agg(
             avg("valor_venda").alias("preco_medio"),
             spark_min("valor_venda").alias("preco_minimo"),
